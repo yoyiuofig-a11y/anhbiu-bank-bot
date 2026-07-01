@@ -11,69 +11,78 @@ class LichSu(commands.Cog):
         name="lichsu",
         description="Xem lịch sử giao dịch"
     )
-    async def lichsu(self, interaction: discord.Interaction):
+    async def lichsu(
+        self,
+        interaction: discord.Interaction
+    ):
 
         db = sqlite3.connect("bank.db")
         cursor = db.cursor()
 
-        user = str(interaction.user.id)
-
+        # Lấy mã tài khoản của người dùng
         cursor.execute(
             "SELECT account_id FROM accounts WHERE user_id=?",
-            (user,)
+            (str(interaction.user.id),)
         )
 
         account = cursor.fetchone()
 
-        if not account:
+        if account is None:
             await interaction.response.send_message(
-                "❌ Bạn chưa có tài khoản.",
+                "❌ Bạn chưa đăng ký tài khoản.",
                 ephemeral=True
             )
             db.close()
             return
 
-        account_id = account[0]
+        ma_tai_khoan = account[0]
 
+        # Lấy 20 giao dịch gần nhất
         cursor.execute("""
-        SELECT sender, receiver, amount, time
-        FROM history
-        WHERE sender=? OR receiver=?
-        ORDER BY id DESC
-        LIMIT 10
-        """, (account_id, account_id))
+            SELECT sender, receiver, amount, time
+            FROM logs
+            WHERE sender=? OR receiver=?
+            ORDER BY id DESC
+            LIMIT 20
+        """, (ma_tai_khoan, ma_tai_khoan))
 
-        rows = cursor.fetchall()
+        logs = cursor.fetchall()
+        db.close()
 
-        if not rows:
+        if not logs:
             await interaction.response.send_message(
-                "📜 Chưa có giao dịch nào."
+                "📄 Bạn chưa có giao dịch nào."
             )
-            db.close()
             return
 
         embed = discord.Embed(
             title="📜 Lịch sử giao dịch",
-            color=0x3498db
+            description=f"👤 {interaction.user.mention}",
+            color=discord.Color.blue()
         )
 
-        for sender, receiver, amount, time in rows:
+        for sender, receiver, amount, time in logs:
 
-            if sender == account_id:
-                text = f"📤 Chuyển **{amount:,} VNĐ** ➜ {receiver}\n🕒 {time}"
+            if amount >= 0:
+                icon = "📥"
             else:
-                text = f"📥 Nhận **{amount:,} VNĐ** từ {sender}\n🕒 {time}"
+                icon = "📤"
 
             embed.add_field(
-                name="────────────",
-                value=text,
+                name=f"{icon} {abs(amount):,} VNĐ",
+                value=(
+                    f"**Người gửi:** `{sender}`\n"
+                    f"**Người nhận:** `{receiver}`\n"
+                    f"**Thời gian:** `{time}`"
+                ),
                 inline=False
             )
 
+        embed.set_footer(
+            text=f"{len(logs)} giao dịch gần nhất"
+        )
+
         await interaction.response.send_message(embed=embed)
-
-        db.close()
-
 
 async def setup(bot):
     await bot.add_cog(LichSu(bot))
