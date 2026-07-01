@@ -1,4 +1,5 @@
 import discord
+import discord
 from discord.ext import commands
 from discord import app_commands
 import sqlite3
@@ -9,7 +10,7 @@ class MoKhoa(commands.Cog):
 
     @app_commands.command(
         name="mokhoa",
-        description="Mở khóa tài khoản ngân hàng"
+        description="Mở khóa tài khoản"
     )
     @app_commands.checks.has_permissions(administrator=True)
     async def mokhoa(
@@ -17,38 +18,34 @@ class MoKhoa(commands.Cog):
         interaction: discord.Interaction,
         ma_tai_khoan: str
     ):
-
         db = sqlite3.connect("bank.db")
         cursor = db.cursor()
-
-        cursor.execute(
-            "SELECT * FROM accounts WHERE account_id=?",
-            (ma_tai_khoan,)
-        )
-
-        if not cursor.fetchone():
-            await interaction.response.send_message(
-                "❌ Không tìm thấy tài khoản.",
-                ephemeral=True
-            )
-            db.close()
-            return
 
         cursor.execute(
             "UPDATE accounts SET status='active' WHERE account_id=?",
             (ma_tai_khoan,)
         )
 
-        db.commit()
+        if cursor.rowcount == 0:
+            await interaction.response.send_message(
+                "❌ Không tìm thấy tài khoản.",
+                ephemeral=True
+            )
+        else:
+            db.commit()
+            await interaction.response.send_message(
+                f"🔓 Đã mở khóa tài khoản **{ma_tai_khoan}**."
+            )
+
         db.close()
 
-        embed = discord.Embed(
-            title="🔓 Mở khóa tài khoản",
-            description=f"Tài khoản **{ma_tai_khoan}** đã được mở khóa.",
-            color=0x2ecc71
-        )
-
-        await interaction.response.send_message(embed=embed)
+    @mokhoa.error
+    async def mokhoa_error(self, interaction, error):
+        if isinstance(error, app_commands.MissingPermissions):
+            await interaction.response.send_message(
+                "❌ Chỉ Admin mới được sử dụng lệnh này.",
+                ephemeral=True
+            )
 
 async def setup(bot):
     await bot.add_cog(MoKhoa(bot))
