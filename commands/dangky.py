@@ -21,23 +21,88 @@ class DangKy(commands.Cog):
         user_id = str(interaction.user.id)
 
         # Kiểm tra đã đăng ký chưa
-        cursor.execute(
-            "SELECT account_id FROM accounts WHERE user_id=?",
-            (user_id,)
-        )
+        cursor.execute("""
+        SELECT account_id, account_number, cccd, balance, status
+        FROM accounts
+        WHERE user_id=?
+        """, (user_id,))
 
-        if cursor.fetchone():
+        account = cursor.fetchone()
+
+        if account:
+            embed = discord.Embed(
+                title="🏦 Bạn đã có tài khoản",
+                color=discord.Color.orange()
+            )
+
+            embed.add_field(
+                name="🆔 Mã tài khoản",
+                value=f"`{account[0]}`",
+                inline=False
+            )
+
+            embed.add_field(
+                name="💳 Số tài khoản",
+                value=f"`{account[1]}`",
+                inline=False
+            )
+
+            embed.add_field(
+                name="🪪 CCCD",
+                value=f"`{account[2]}`",
+                inline=False
+            )
+
+            embed.add_field(
+                name="💰 Số dư",
+                value=f"`{account[3]:,} VNĐ`",
+                inline=False
+            )
+
+            embed.add_field(
+                name="📌 Trạng thái",
+                value=f"`{account[4]}`",
+                inline=False
+            )
+
+            embed.set_footer(text="AnhBiu Bank")
+
             await interaction.response.send_message(
-                "❌ Bạn đã đăng ký tài khoản rồi!",
+                embed=embed,
                 ephemeral=True
             )
+
             db.close()
             return
 
-        # Tạo thông tin tài khoản
-        account_id = str(random.randint(100000, 999999))
-        account_number = str(random.randint(1000000000, 9999999999))
-        cccd = str(random.randint(100000000000, 999999999999))
+        # Tạo mã duy nhất
+        while True:
+            account_id = str(random.randint(100000, 999999))
+            cursor.execute(
+                "SELECT 1 FROM accounts WHERE account_id=?",
+                (account_id,)
+            )
+            if cursor.fetchone() is None:
+                break
+
+        while True:
+            account_number = str(random.randint(1000000000, 9999999999))
+            cursor.execute(
+                "SELECT 1 FROM accounts WHERE account_number=?",
+                (account_number,)
+            )
+            if cursor.fetchone() is None:
+                break
+
+        while True:
+            cccd = str(random.randint(100000000000, 999999999999))
+            cursor.execute(
+                "SELECT 1 FROM accounts WHERE cccd=?",
+                (cccd,)
+            )
+            if cursor.fetchone() is None:
+                break
+
         created_at = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
         cursor.execute("""
@@ -50,7 +115,7 @@ class DangKy(commands.Cog):
             created_at,
             status
         )
-        VALUES(?,?,?,?,?,?,?)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (
             user_id,
             account_id,
@@ -69,10 +134,36 @@ class DangKy(commands.Cog):
             color=discord.Color.green()
         )
 
-        embed.add_field(name="🆔 Mã tài khoản", value=f"`{account_id}`", inline=False)
-        embed.add_field(name="💳 Số tài khoản", value=f"`{account_number}`", inline=False)
-        embed.add_field(name="🪪 CCCD", value=f"`{cccd}`", inline=False)
-        embed.add_field(name="💰 Số dư", value="`0 VNĐ`", inline=False)
+        embed.add_field(
+            name="🆔 Mã tài khoản",
+            value=f"`{account_id}`",
+            inline=False
+        )
+
+        embed.add_field(
+            name="💳 Số tài khoản",
+            value=f"`{account_number}`",
+            inline=False
+        )
+
+        embed.add_field(
+            name="🪪 CCCD",
+            value=f"`{cccd}`",
+            inline=False
+        )
+
+        embed.add_field(
+            name="💰 Số dư",
+            value="`0 VNĐ`",
+            inline=False
+        )
+
+        embed.add_field(
+            name="📌 Trạng thái",
+            value="`active`",
+            inline=False
+        )
+
         embed.set_footer(text="AnhBiu Bank")
 
         await interaction.response.send_message(embed=embed)
