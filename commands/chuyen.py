@@ -4,52 +4,33 @@ from discord import app_commands
 import sqlite3
 from datetime import datetime
 
-class Chuyen(commands.Cog):
+class ChuyenTien(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="chuyen", description="Chuyển tiền")
-    @app_commands.describe(
-        ma_tai_khoan="Mã tài khoản người nhận",
-        so_tien="Số tiền muốn chuyển"
+    @app_commands.command(
+        name="chuyen",
+        description="Chuyển tiền cho tài khoản khác"
     )
     async def chuyen(
         self,
         interaction: discord.Interaction,
         ma_tai_khoan: str,
-        so_tien: int
+        so_tien: app_commands.Range[int, 1, None]
     ):
-
-        if so_tien <= 0:
-            await interaction.response.send_message(
-                "❌ Số tiền phải lớn hơn 0.",
-                ephemeral=True
-            )
-            return
 
         db = sqlite3.connect("bank.db")
         cursor = db.cursor()
 
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS history(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            sender TEXT,
-            receiver TEXT,
-            amount INTEGER,
-            time TEXT
-        )
-        """)
-
-        user = str(interaction.user.id)
-
+        # Kiểm tra người gửi
         cursor.execute(
-            "SELECT balance, locked, account_id FROM accounts WHERE user_id=?",
-            (user,)
+            "SELECT account_id, balance, status FROM accounts WHERE user_id=?",
+            (str(interaction.user.id),)
         )
 
         sender = cursor.fetchone()
 
-        if not sender:
+        if sender is None:
             await interaction.response.send_message(
                 "❌ Bạn chưa đăng ký tài khoản.",
                 ephemeral=True
@@ -57,32 +38,33 @@ class Chuyen(commands.Cog):
             db.close()
             return
 
-        balance, locked, sender_id = sender
+        sender_id, sender_balance, sender_status = sender
 
-        if locked:
+        if sender_status == "locked":
             await interaction.response.send_message(
-                "🔒 Tài khoản của bạn đang bị khóa.",
+                "❌ Tài khoản của bạn đang bị khóa.",
                 ephemeral=True
             )
             db.close()
             return
 
-        if balance < so_tien:
+        if sender_id == ma_tai_khoan:
             await interaction.response.send_message(
-                "❌ Số dư không đủ.",
+                "❌ Không thể chuyển tiền cho chính mình.",
                 ephemeral=True
             )
             db.close()
             return
 
+        # Kiểm tra người nhận
         cursor.execute(
-            "SELECT user_id, locked FROM accounts WHERE account_id=?",
+            "SELECT balance, status FROM accounts WHERE account_id=?",
             (ma_tai_khoan,)
         )
 
-        target = cursor.fetchone()
+        receiver = cursor.fetchone()
 
-        if not target:
+        if receiver is None:
             await interaction.response.send_message(
                 "❌ Không tìm thấy tài khoản nhận.",
                 ephemeral=True
@@ -90,9 +72,9 @@ class Chuyen(commands.Cog):
             db.close()
             return
 
-        target_user, target_locked = target
+        receiver_balance, receiver_status = receiver
 
-        if target_locked:
+        if receiver_status == "locked":
             await interaction.response.send_message(
                 "❌ Tài khoản nhận đang bị khóa.",
                 ephemeral=True
@@ -100,32 +82,40 @@ class Chuyen(commands.Cog):
             db.close()
             return
 
-        cursor.execute(
-            "UPDATE accounts SET balance=balance-? WHERE user_id=?",
-            (so_tien, user)
-        )
-
-        cursor.execute(
-            "UPDATE accounts SET balance=balance+? WHERE user_id=?",
-            (so_tien, target_user)
-        )
-
-        cursor.execute(
-            "INSERT INTO history(sender,receiver,amount,time) VALUES(?,?,?,?)",
-            (
-                sender_id,
-                ma_tai_khoan,
-                so_tien,
-                datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        if sender_balance < so_tien:
+            await interaction.response.send_message(
+                "❌ Số dư không đủ.",
+                ephemeral=True
             )
+            db.close()
+            return
+
+        # Trừ tiền người gửi
+        cursor.execute(
+            "UPDATE accounts SET balance = balance - ? WHERE account_id=?",
+            (so_tien, sender_id)
+        )
+
+        # Cộng tiền người nhận
+        cursor.execute(
+            "UPDATE accounts SET balance = balance + ? WHERE account_id=?",
+            (so_tien, ma_tai_khoan)
+        )
+
+        # Lưu lịch sử
+        now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+
+        cursor.execute(
+            "INSERT INTO logs(sender, receiver, amount, time) VALUES(?,?,?,?)",
+            (sender_id, ma_tai_khoan, so_tien, now)
         )
 
         db.commit()
         db.close()
 
         await interaction.response.send_message(
-            f"✅ Đã chuyển **{so_tien:,} VNĐ** đến **{ma_tai_khoan}**."
+            f"✅ Chuyển thành công **{so_tien:,} VNĐ** đến tài khoản **{ma_tai_khoan}**."
         )
 
 async def setup(bot):
-    await bot.add_cog(Chuyen(bot))
+    await bot.add_cog(ChuyenTien(bot))
