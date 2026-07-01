@@ -1,5 +1,8 @@
 import os
 import sqlite3
+from threading import Thread
+
+from flask import Flask
 import discord
 from discord.ext import commands
 
@@ -10,6 +13,8 @@ intents.message_content = True
 intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
+
+# ================= DATABASE =================
 
 db = sqlite3.connect("bank.db")
 cursor = db.cursor()
@@ -38,19 +43,34 @@ CREATE TABLE IF NOT EXISTS logs(
 
 db.commit()
 
+# ================= WEB SERVER =================
+
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "AnhBiu Bank Bot Online"
+
+def run_web():
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+
+# ================= LOAD COMMANDS =================
+
 @bot.event
 async def setup_hook():
     for file in os.listdir("commands"):
         if file.endswith(".py") and file != "__init__.py":
             try:
                 await bot.load_extension(f"commands.{file[:-3]}")
-                print(f"Đã tải {file}")
+                print(f"Loaded {file}")
             except Exception as e:
-                print(f"Lỗi {file}: {e}")
+                print(f"Error loading {file}: {e}")
 
 @bot.event
 async def on_ready():
     await bot.tree.sync()
-    print(f"{bot.user} đã online!")
+    print(f"{bot.user} is online!")
+
+Thread(target=run_web, daemon=True).start()
 
 bot.run(TOKEN)
