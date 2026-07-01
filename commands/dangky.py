@@ -54,5 +54,3 @@ async def setup(bot):
         embed = discord.Embed(
             title="🏦 Đăng ký thành công",
             color=0x2
-            async def setup(bot):
-    await bot.add_cog(DangKy(bot))
