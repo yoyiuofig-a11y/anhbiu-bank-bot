@@ -9,7 +9,7 @@ class Khoa(commands.Cog):
 
     @app_commands.command(
         name="khoa",
-        description="Khóa tài khoản ngân hàng"
+        description="Khóa tài khoản"
     )
     @app_commands.checks.has_permissions(administrator=True)
     async def khoa(
@@ -17,38 +17,34 @@ class Khoa(commands.Cog):
         interaction: discord.Interaction,
         ma_tai_khoan: str
     ):
-
         db = sqlite3.connect("bank.db")
         cursor = db.cursor()
-
-        cursor.execute(
-            "SELECT * FROM accounts WHERE account_id=?",
-            (ma_tai_khoan,)
-        )
-
-        if not cursor.fetchone():
-            await interaction.response.send_message(
-                "❌ Không tìm thấy tài khoản.",
-                ephemeral=True
-            )
-            db.close()
-            return
 
         cursor.execute(
             "UPDATE accounts SET status='locked' WHERE account_id=?",
             (ma_tai_khoan,)
         )
 
-        db.commit()
+        if cursor.rowcount == 0:
+            await interaction.response.send_message(
+                "❌ Không tìm thấy tài khoản.",
+                ephemeral=True
+            )
+        else:
+            db.commit()
+            await interaction.response.send_message(
+                f"🔒 Đã khóa tài khoản **{ma_tai_khoan}**."
+            )
+
         db.close()
 
-        embed = discord.Embed(
-            title="🔒 Khóa tài khoản",
-            description=f"Tài khoản **{ma_tai_khoan}** đã bị khóa.",
-            color=0xe74c3c
-        )
-
-        await interaction.response.send_message(embed=embed)
+    @khoa.error
+    async def khoa_error(self, interaction, error):
+        if isinstance(error, app_commands.MissingPermissions):
+            await interaction.response.send_message(
+                "❌ Chỉ Admin mới được sử dụng lệnh này.",
+                ephemeral=True
+            )
 
 async def setup(bot):
     await bot.add_cog(Khoa(bot))
