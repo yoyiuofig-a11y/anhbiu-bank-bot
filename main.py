@@ -1,40 +1,59 @@
-import os
 import discord
 from discord.ext import commands
-from dotenv import load_dotenv
-
-load_dotenv()
+import sqlite3
+import os
 
 TOKEN = os.getenv("TOKEN")
 
 intents = discord.Intents.default()
 intents.message_content = True
-intents.members = True
 
 bot = commands.Bot(
     command_prefix="!",
     intents=intents
 )
 
+# Database
+db = sqlite3.connect("bank.db")
+cursor = db.cursor()
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS accounts(
+    user_id TEXT PRIMARY KEY,
+    account_id TEXT,
+    account_number TEXT,
+    cccd TEXT,
+    balance INTEGER DEFAULT 0,
+    created_at TEXT,
+    status TEXT DEFAULT 'active'
+)
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS logs(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sender TEXT,
+    receiver TEXT,
+    amount INTEGER,
+    time TEXT
+)
+""")
+
+db.commit()
+
+@bot.event
+async def setup_hook():
+    for file in os.listdir("./commands"):
+        if file.endswith(".py") and file != "__init__.py":
+            await bot.load_extension(f"commands.{file[:-3]}")
+            print(f"Đã tải {file}")
+
 @bot.event
 async def on_ready():
-    print("=" * 40)
-    print(f"🤖 {bot.user} đã sẵn sàng!")
-    print("=" * 40)
+    await bot.tree.sync()
+    print(f"{bot.user} đã online!")
 
-    try:
-        synced = await bot.tree.sync()
-        print(f"✅ Đã đồng bộ {len(synced)} Slash Commands")
-    except Exception as e:
-        print(e)
-
-async def load_cogs():
-
-    for file in os.listdir("./commands"):
-
-        if file.endswith(".py"):
-
-            await bot.load_extension(
+bot.run(TOKEN)            await bot.load_extension(
                 f"commands.{file[:-3]}"
             )
 
