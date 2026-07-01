@@ -1,12 +1,31 @@
 import os
 import sqlite3
+from threading import Thread
+
+from flask import Flask
 import discord
 from discord.ext import commands
 
+# ================= WEB SERVER =================
+
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "AnhBiu Bank Bot đang chạy!"
+
+def run_web():
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
+
+Thread(target=run_web).start()
+
+# ================= DISCORD =================
+
 TOKEN = os.getenv("TOKEN")
 
-if TOKEN is None:
-    raise RuntimeError("Chưa tìm thấy biến môi trường TOKEN")
+if not TOKEN:
+    raise Exception("Thiếu biến môi trường TOKEN")
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -48,23 +67,20 @@ db.commit()
 
 # ================= LOAD COMMANDS =================
 
-async def load_extensions():
-    if not os.path.exists("commands"):
-        print("❌ Không tìm thấy thư mục commands")
-        return
-
-    for file in os.listdir("commands"):
-        if file.endswith(".py") and file != "__init__.py":
-            extension = f"commands.{file[:-3]}"
-            try:
-                await bot.load_extension(extension)
-                print(f"✅ Loaded {extension}")
-            except Exception as e:
-                print(f"❌ {extension}: {e}")
-
 @bot.event
 async def setup_hook():
-    await load_extensions()
+    print("📦 Đang tải commands...")
+
+    if os.path.exists("commands"):
+        for file in os.listdir("commands"):
+            if file.endswith(".py") and file != "__init__.py":
+                try:
+                    await bot.load_extension(f"commands.{file[:-3]}")
+                    print(f"✅ {file}")
+                except Exception as e:
+                    print(f"❌ {file}: {e}")
+
+# ================= READY =================
 
 @bot.event
 async def on_ready():
@@ -74,6 +90,9 @@ async def on_ready():
     except Exception as e:
         print(e)
 
-    print(f"🤖 {bot.user} đã online")
+    print("=" * 40)
+    print(f"🤖 {bot.user}")
+    print(f"🌍 {len(bot.guilds)} server")
+    print("=" * 40)
 
 bot.run(TOKEN)
