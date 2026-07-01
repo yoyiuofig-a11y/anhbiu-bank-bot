@@ -4,6 +4,7 @@ from discord import app_commands
 import sqlite3
 import random
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 class DangKy(commands.Cog):
     def __init__(self, bot):
@@ -20,9 +21,13 @@ class DangKy(commands.Cog):
 
         user_id = str(interaction.user.id)
 
-        # Kiểm tra đã đăng ký chưa
         cursor.execute("""
-        SELECT account_id, account_number, cccd, balance, status
+        SELECT account_id,
+               account_number,
+               cccd,
+               balance,
+               created_at,
+               status
         FROM accounts
         WHERE user_id=?
         """, (user_id,))
@@ -30,6 +35,7 @@ class DangKy(commands.Cog):
         account = cursor.fetchone()
 
         if account:
+
             embed = discord.Embed(
                 title="🏦 Bạn đã có tài khoản",
                 color=discord.Color.orange()
@@ -60,8 +66,14 @@ class DangKy(commands.Cog):
             )
 
             embed.add_field(
-                name="📌 Trạng thái",
+                name="📅 Ngày & Giờ mở",
                 value=f"`{account[4]}`",
+                inline=False
+            )
+
+            embed.add_field(
+                name="📌 Trạng thái",
+                value=f"`{account[5]}`",
                 inline=False
             )
 
@@ -75,7 +87,6 @@ class DangKy(commands.Cog):
             db.close()
             return
 
-        # Tạo mã duy nhất
         while True:
             account_id = str(random.randint(100000, 999999))
             cursor.execute(
@@ -103,7 +114,9 @@ class DangKy(commands.Cog):
             if cursor.fetchone() is None:
                 break
 
-        created_at = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        created_at = datetime.now(
+            ZoneInfo("Asia/Ho_Chi_Minh")
+        ).strftime("%d/%m/%Y %H:%M:%S")
 
         cursor.execute("""
         INSERT INTO accounts(
@@ -131,6 +144,7 @@ class DangKy(commands.Cog):
 
         embed = discord.Embed(
             title="🏦 Đăng ký thành công",
+            description="Chào mừng bạn đến với AnhBiu Bank!",
             color=discord.Color.green()
         )
 
@@ -155,6 +169,12 @@ class DangKy(commands.Cog):
         embed.add_field(
             name="💰 Số dư",
             value="`0 VNĐ`",
+            inline=False
+        )
+
+        embed.add_field(
+            name="📅 Ngày & Giờ mở",
+            value=f"`{created_at}`",
             inline=False
         )
 
