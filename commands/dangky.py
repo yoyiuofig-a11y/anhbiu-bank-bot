@@ -1,9 +1,6 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
-import sqlite3
-import random
-from datetime import datetime
 
 class DangKy(commands.Cog):
     def __init__(self, bot):
@@ -11,30 +8,10 @@ class DangKy(commands.Cog):
 
     @app_commands.command(name="dangky", description="Đăng ký tài khoản ngân hàng")
     async def dangky(self, interaction: discord.Interaction):
+        await interaction.response.send_message("✅ Đăng ký thành công!")
 
-        db = sqlite3.connect("bank.db")
-        cursor = db.cursor()
-
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS accounts(
-            user_id TEXT PRIMARY KEY,
-            account_id TEXT,
-            account_number TEXT,
-            cccd TEXT,
-            balance INTEGER,
-            created_at TEXT,
-            locked INTEGER DEFAULT 0
-        )
-        """)
-
-        user = str(interaction.user.id)
-
-        cursor.execute(
-            "SELECT * FROM accounts WHERE user_id=?",
-            (user,)
-        )
-
-        if cursor.fetchone():
+async def setup(bot):
+    await bot.add_cog(DangKy(bot))        if cursor.fetchone():
             await interaction.response.send_message(
                 "❌ Bạn đã có tài khoản ngân hàng.",
                 ephemeral=True
