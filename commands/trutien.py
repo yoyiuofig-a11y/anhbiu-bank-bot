@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import sqlite3
+from datetime import datetime
 
 class TruTien(commands.Cog):
     def __init__(self, bot):
@@ -9,19 +10,29 @@ class TruTien(commands.Cog):
 
     @app_commands.command(
         name="trutien",
-        description="Trừ tiền của tài khoản"
+        description="Trừ tiền khỏi tài khoản"
     )
-    @app_commands.checks.has_permissions(administrator=True)
     async def trutien(
         self,
         interaction: discord.Interaction,
         ma_tai_khoan: str,
-        so_tien: int
+        so_tien: app_commands.Range[int, 1, None]
     ):
 
-        if so_tien <= 0:
+        allowed_roles = {
+            "Owner",
+            "Co-Owner",
+            "HeadAdmin",
+            "Admin",
+            "Developer"
+        }
+
+        # Kiểm tra quyền người thực hiện
+        user_roles = {role.name for role in interaction.user.roles}
+
+        if not user_roles.intersection(allowed_roles):
             await interaction.response.send_message(
-                "❌ Số tiền phải lớn hơn 0.",
+                "❌ Bạn không có quyền sử dụng lệnh này.",
                 ephemeral=True
             )
             return
@@ -29,14 +40,15 @@ class TruTien(commands.Cog):
         db = sqlite3.connect("bank.db")
         cursor = db.cursor()
 
+        # Lấy user_id và số dư
         cursor.execute(
-            "SELECT balance FROM accounts WHERE account_id=?",
+            "SELECT user_id, balance FROM accounts WHERE account_id=?",
             (ma_tai_khoan,)
         )
 
         data = cursor.fetchone()
 
-        if not data:
+        if data is None:
             await interaction.response.send_message(
                 "❌ Không tìm thấy tài khoản.",
                 ephemeral=True
@@ -44,11 +56,25 @@ class TruTien(commands.Cog):
             db.close()
             return
 
-        balance = data[0]
+        member = interaction.guild.get_member(int(data[0]))
+
+        # Không cho trừ tiền Staff
+        if member:
+            target_roles = {role.name for role in member.roles}
+
+            if target_roles.intersection(allowed_roles):
+                await interaction.response.send_message(
+                    "❌ Không thể trừ tiền của Owner, Co-Owner, HeadAdmin, Admin hoặc Developer.",
+                    ephemeral=True
+                )
+                db.close()
+                return
+
+        balance = data[1]
 
         if balance < so_tien:
             await interaction.response.send_message(
-                "❌ Tài khoản không đủ số dư.",
+                "❌ Số dư không đủ.",
                 ephemeral=True
             )
             db.close()
@@ -59,11 +85,21 @@ class TruTien(commands.Cog):
             (so_tien, ma_tai_khoan)
         )
 
+        cursor.execute(
+            "INSERT INTO logs(sender, receiver, amount, time) VALUES(?,?,?,?)",
+            (
+                "ADMIN",
+                ma_tai_khoan,
+                -so_tien,
+                datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+            )
+        )
+
         db.commit()
         db.close()
 
         await interaction.response.send_message(
-            f"✅ Đã trừ **{so_tien:,} VNĐ** từ tài khoản **{ma_tai_khoan}**."
+            f"✅ Đã trừ **{so_tien:,} VNĐ** khỏi tài khoản **{ma_tai_khoan}**."
         )
 
 async def setup(bot):
