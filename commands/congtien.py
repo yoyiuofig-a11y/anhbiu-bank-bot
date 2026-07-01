@@ -9,45 +9,54 @@ class CongTien(commands.Cog):
 
     @app_commands.command(
         name="congtien",
-        description="Cộng tiền cho tài khoản"
+        description="Cộng tiền cho tài khoản (Admin)"
     )
-    @app_commands.checks.has_permissions(administrator=True)
+    @app_commands.default_permissions(administrator=True)
     async def congtien(
         self,
         interaction: discord.Interaction,
-        ma_tai_khoan: str,
-        so_tien: int
+        stk: str,
+        so_tien: app_commands.Range[int, 1, None]
     ):
+        try:
+            db = sqlite3.connect("bank.db")
+            cursor = db.cursor()
 
-        db = sqlite3.connect("bank.db")
-        cursor = db.cursor()
-
-        cursor.execute(
-            "SELECT balance FROM accounts WHERE account_id=?",
-            (ma_tai_khoan,)
-        )
-
-        data = cursor.fetchone()
-
-        if not data:
-            await interaction.response.send_message(
-                "❌ Không tìm thấy tài khoản.",
-                ephemeral=True
+            cursor.execute(
+                "SELECT balance FROM accounts WHERE account_number=?",
+                (stk,)
             )
+
+            data = cursor.fetchone()
+
+            if data is None:
+                await interaction.response.send_message(
+                    "❌ Không tìm thấy số tài khoản.",
+                    ephemeral=True
+                )
+                db.close()
+                return
+
+            cursor.execute(
+                "UPDATE accounts SET balance = balance + ? WHERE account_number=?",
+                (so_tien, stk)
+            )
+
+            db.commit()
             db.close()
-            return
 
-        cursor.execute(
-            "UPDATE accounts SET balance = balance + ? WHERE account_id=?",
-            (so_tien, ma_tai_khoan)
-        )
+            await interaction.response.send_message(
+                f"✅ Đã cộng **{so_tien:,} VNĐ** vào STK **{stk}**."
+            )
 
-        db.commit()
-        db.close()
+        except Exception as e:
+            print(f"[CONGTIEN] {e}")
 
-        await interaction.response.send_message(
-            f"✅ Đã cộng **{so_tien:,} VNĐ** cho **{ma_tai_khoan}**."
-        )
+            if not interaction.response.is_done():
+                await interaction.response.send_message(
+                    "❌ Có lỗi xảy ra khi cộng tiền.",
+                    ephemeral=True
+                )
 
 async def setup(bot):
     await bot.add_cog(CongTien(bot))
