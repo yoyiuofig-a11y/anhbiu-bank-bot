@@ -1,19 +1,21 @@
+import os
+import sqlite3
 import discord
 from discord.ext import commands
-import sqlite3
-import os
 
 TOKEN = os.getenv("TOKEN")
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True
 
 bot = commands.Bot(
     command_prefix="!",
     intents=intents
 )
 
-# Database
+# ================= DATABASE =================
+
 db = sqlite3.connect("bank.db")
 cursor = db.cursor()
 
@@ -35,6 +37,45 @@ CREATE TABLE IF NOT EXISTS logs(
     sender TEXT,
     receiver TEXT,
     amount INTEGER,
+    time TEXT
+)
+""")
+
+db.commit()
+
+# ================= LOAD COMMANDS =================
+
+@bot.event
+async def setup_hook():
+
+    for file in os.listdir("./commands"):
+
+        if file.endswith(".py") and file != "__init__.py":
+
+            try:
+                await bot.load_extension(f"commands.{file[:-3]}")
+                print(f"✅ Đã tải {file}")
+
+            except Exception as e:
+                print(f"❌ Lỗi {file}: {e}")
+
+# ================= READY =================
+
+@bot.event
+async def on_ready():
+
+    try:
+        synced = await bot.tree.sync()
+        print(f"Đã đồng bộ {len(synced)} slash command.")
+    except Exception as e:
+        print(e)
+
+    print("--------------------------------")
+    print(f"Bot: {bot.user}")
+    print("AnhBiu Bank Bot đã online!")
+    print("--------------------------------")
+
+bot.run(TOKEN)    amount INTEGER,
     time TEXT
 )
 """)
