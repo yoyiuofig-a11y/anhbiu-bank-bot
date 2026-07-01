@@ -1,51 +1,62 @@
-import discord
-from discord import app_commands
+ import discord
 from discord.ext import commands
+from discord import app_commands
+import sqlite3
+import random
+from datetime import datetime
 
 class DangKy(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="dangky", description="Đăng ký tài khoản ngân hàng")
+    @app_commands.command(
+        name="dangky",
+        description="Đăng ký tài khoản ngân hàng"
+    )
     async def dangky(self, interaction: discord.Interaction):
-        await interaction.response.send_message("✅ Đăng ký thành công!")
 
-async def setup(bot):
-    await bot.add_cog(DangKy(bot))        if cursor.fetchone():
+        db = sqlite3.connect("bank.db")
+        cursor = db.cursor()
+
+        user_id = str(interaction.user.id)
+
+        cursor.execute(
+            "SELECT * FROM accounts WHERE user_id=?",
+            (user_id,)
+        )
+
+        if cursor.fetchone():
             await interaction.response.send_message(
-                "❌ Bạn đã có tài khoản ngân hàng.",
+                "❌ Bạn đã đăng ký tài khoản rồi!",
                 ephemeral=True
             )
             db.close()
             return
 
-        cursor.execute("SELECT COUNT(*) FROM accounts")
-        count = cursor.fetchone()[0] + 1
-
-        account_id = f"AB{count:06d}"
-
-        account_number = "".join(
-            random.choice("0123456789")
-            for _ in range(random.randint(10,12))
-        )
-
-        cccd = "".join(
-            random.choice("0123456789")
-            for _ in range(12)
-        )
-
-        created = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        account_id = "AB" + str(random.randint(100000, 999999))
+        account_number = str(random.randint(1000000000, 999999999999))
+        cccd = str(random.randint(100000000000, 999999999999))
+        created_at = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
         cursor.execute("""
-        INSERT INTO accounts
-        VALUES(?,?,?,?,?,?,0)
-        """,(
-            user,
+        INSERT INTO accounts(
+            user_id,
             account_id,
             account_number,
             cccd,
-            1000,
-            created
+            balance,
+            created_at,
+            status
+        )
+        VALUES(?,?,?,?,?,?,?)
+        """, (
+            user_id,
+            account_id,
+            account_number,
+            cccd,
+            0,
+            created_at,
+            "active"
         ))
 
         db.commit()
@@ -53,4 +64,42 @@ async def setup(bot):
 
         embed = discord.Embed(
             title="🏦 Đăng ký thành công",
-            color=0x2
+            color=0x2ecc71
+        )
+
+        embed.add_field(
+            name="🏦 Mã tài khoản",
+            value=account_id,
+            inline=False
+        )
+
+        embed.add_field(
+            name="💳 Số tài khoản",
+            value=account_number,
+            inline=False
+        )
+
+        embed.add_field(
+            name="🪪 CCCD",
+            value=cccd,
+            inline=False
+        )
+
+        embed.add_field(
+            name="💰 Số dư",
+            value="0 VNĐ",
+            inline=False
+        )
+
+        embed.add_field(
+            name="📅 Ngày mở",
+            value=created_at,
+            inline=False
+        )
+
+        embed.set_footer(text="AnhBiu Bank")
+
+        await interaction.response.send_message(embed=embed)
+
+async def setup(bot):
+    await bot.add_cog(DangKy(bot))
