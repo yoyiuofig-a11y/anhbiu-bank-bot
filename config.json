@@ -1,5 +1,6 @@
 {
-  "prefix": "/",
   "bank_name": "AnhBiu Bank",
-  "currency": "VNĐ"
+  "currency": "VNĐ",
+  "account_prefix": "AB",
+  "cooldown": 5
 }
