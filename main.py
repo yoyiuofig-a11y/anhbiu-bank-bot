@@ -1,40 +1,49 @@
+import os
 import discord
 from discord.ext import commands
-from discord import app_commands
-import sqlite3
-import random
-from datetime import datetime
-import os
+from dotenv import load_dotenv
+from database import *
+
+load_dotenv()
 
 TOKEN = os.getenv("TOKEN")
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True
 
-bot = commands.Bot(command_prefix="!", intents=intents)
-
-db = sqlite3.connect("bank.db")
-cursor = db.cursor()
-
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS accounts(
-    user_id TEXT PRIMARY KEY,
-    account_id TEXT,
-    account_number TEXT,
-    cccd TEXT,
-    balance INTEGER,
-    created_at TEXT
+bot = commands.Bot(
+    command_prefix="!",
+    intents=intents
 )
-""")
-db.commit()
 
 @bot.event
 async def on_ready():
     await bot.tree.sync()
-    print(f"{bot.user} đã hoạt động!")
 
-@bot.tree.command(name="dangky", description="Đăng ký tài khoản ngân hàng")
-async def dangky(interaction: discord.Interaction):
+    print("=" * 40)
+    print("🏦 AnhBiu Bank đã khởi động")
+    print(f"🤖 Bot: {bot.user}")
+    print(f"🌍 Servers: {len(bot.guilds)}")
+    print("=" * 40)
+
+# ==========================
+# /ping
+# ==========================
+
+@bot.tree.command(
+    name="ping",
+    description="Kiểm tra bot"
+)
+async def ping(interaction: discord.Interaction):
+
+    await interaction.response.send_message(
+        f"🏓 Pong!\n{round(bot.latency*1000)}ms"
+    )
+
+# Các lệnh ngân hàng sẽ được thêm ở đây
+
+bot.run(TOKEN)async def dangky(interaction: discord.Interaction):
 
     user = str(interaction.user.id)
 
