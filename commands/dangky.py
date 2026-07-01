@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 import sqlite3
 import random
-import datetime
+from datetime import datetime
 
 class DangKy(commands.Cog):
     def __init__(self, bot):
@@ -18,16 +18,16 @@ class DangKy(commands.Cog):
         db = sqlite3.connect("bank.db")
         cursor = db.cursor()
 
-        user = str(interaction.user.id)
+        user_id = str(interaction.user.id)
 
         cursor.execute(
             "SELECT * FROM accounts WHERE user_id=?",
-            (user,)
+            (user_id,)
         )
 
         if cursor.fetchone():
             await interaction.response.send_message(
-                "❌ Bạn đã đăng ký rồi!",
+                "❌ Bạn đã đăng ký tài khoản rồi!",
                 ephemeral=True
             )
             db.close()
@@ -42,12 +42,12 @@ class DangKy(commands.Cog):
         (user_id, account_id, account_number, cccd, balance, created_at, status)
         VALUES (?,?,?,?,?,?,?)
         """, (
-            user,
+            user_id,
             account_id,
             account_number,
             cccd,
             0,
-            datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+            datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
             "active"
         ))
 
@@ -59,7 +59,7 @@ class DangKy(commands.Cog):
             color=discord.Color.green()
         )
 
-        embed.add_field(name="🆔 ID", value=account_id, inline=False)
+        embed.add_field(name="🆔 Mã tài khoản", value=account_id, inline=False)
         embed.add_field(name="💳 STK", value=account_number, inline=False)
         embed.add_field(name="🪪 CCCD", value=cccd, inline=False)
         embed.add_field(name="💰 Số dư", value="0 VNĐ", inline=False)
