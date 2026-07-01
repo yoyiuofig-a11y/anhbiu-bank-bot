@@ -1,6 +1,9 @@
 import os
+import sqlite3
 import discord
 from discord.ext import commands
+
+TOKEN = os.getenv("TOKEN")
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -11,44 +14,49 @@ bot = commands.Bot(
     intents=intents
 )
 
+# ===== Database =====
+
+db = sqlite3.connect("bank.db")
+cursor = db.cursor()
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS accounts(
+    user_id TEXT PRIMARY KEY,
+    account_id TEXT,
+    account_number TEXT,
+    cccd TEXT,
+    balance INTEGER DEFAULT 0,
+    created_at TEXT,
+    status TEXT DEFAULT 'active'
+)
+""")
+
+db.commit()
+
+# ===== Load Commands =====
+
 @bot.event
 async def setup_hook():
     print("📦 Đang tải commands...")
 
-    for file in os.listdir("./commands"):
+    for file in os.listdir("commands"):
+        if file.endswith(".py") and file != "__init__.py":
+            try:
+                await bot.load_extension(f"commands.{file[:-3]}")
+                print(f"✅ Đã tải {file}")
+            except Exception as e:
+                print(f"❌ Lỗi {file}: {e}")
 
-        if not file.endswith(".py"):
-            continue
-
-        if file == "__init__.py":
-            continue
-
-        extension = f"commands.{file[:-3]}"
-
-        try:
-            await bot.load_extension(extension)
-            print(f"✅ Đã tải: {extension}")
-
-        except commands.ExtensionAlreadyLoaded:
-            print(f"⚠️ Đã tải trước: {extension}")
-
-        except commands.NoEntryPointError:
-            print(f"❌ {extension} thiếu async def setup(bot)")
-
-        except commands.ExtensionFailed as e:
-            print(f"❌ Lỗi trong {extension}")
-            print(e)
-
-        except Exception as e:
-            print(f"❌ Không thể tải {extension}")
-            print(e)
+# ===== Ready =====
 
 @bot.event
 async def on_ready():
-    synced = await bot.tree.sync()
+    try:
+        synced = await bot.tree.sync()
+        print(f"✅ Đã đồng bộ {len(synced)} slash commands")
+    except Exception as e:
+        print(e)
 
-    print("=" * 40)
-    print(f"🤖 {bot.user}")
-    print(f"🌍 Đã vào {len(bot.guilds)} server")
-    print(f"📜 Đồng bộ {len(synced)} slash commands")
-    print("=" * 40)
+    print(f"🤖 {bot.user} đã online!")
+
+bot.run(TOKEN)
