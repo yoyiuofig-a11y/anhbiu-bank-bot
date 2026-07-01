@@ -18,15 +18,18 @@ class CongTien(commands.Cog):
         ma_tai_khoan: str,
         so_tien: int
     ):
+
         db = sqlite3.connect("bank.db")
         cursor = db.cursor()
 
         cursor.execute(
-            "SELECT * FROM accounts WHERE account_id=?",
+            "SELECT balance FROM accounts WHERE account_id=?",
             (ma_tai_khoan,)
         )
 
-        if cursor.fetchone() is None:
+        data = cursor.fetchone()
+
+        if data is None:
             await interaction.response.send_message(
                 "❌ Không tìm thấy mã tài khoản.",
                 ephemeral=True
@@ -47,10 +50,10 @@ class CongTien(commands.Cog):
         )
 
     @congtien.error
-    async def congtien_error(self, interaction: discord.Interaction, error):
+    async def congtien_error(self, interaction, error):
         if isinstance(error, app_commands.MissingPermissions):
             await interaction.response.send_message(
-                "❌ Chỉ Admin mới được sử dụng lệnh này.",
+                "❌ Chỉ người có quyền Administrator mới được sử dụng lệnh này.",
                 ephemeral=True
             )
 
