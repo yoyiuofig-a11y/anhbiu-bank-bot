@@ -2,7 +2,6 @@ import os
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
-from database import *
 
 load_dotenv()
 
@@ -19,22 +18,34 @@ bot = commands.Bot(
 
 @bot.event
 async def on_ready():
-    await bot.tree.sync()
-
     print("=" * 40)
-    print("🏦 AnhBiu Bank đã khởi động")
-    print(f"🤖 Bot: {bot.user}")
-    print(f"🌍 Servers: {len(bot.guilds)}")
+    print(f"🤖 {bot.user} đã sẵn sàng!")
     print("=" * 40)
 
-# ==========================
-# /ping
-# ==========================
+    try:
+        synced = await bot.tree.sync()
+        print(f"✅ Đã đồng bộ {len(synced)} Slash Commands")
+    except Exception as e:
+        print(e)
 
-@bot.tree.command(
-    name="ping",
-    description="Kiểm tra bot"
-)
+async def load_cogs():
+
+    for file in os.listdir("./commands"):
+
+        if file.endswith(".py"):
+
+            await bot.load_extension(
+                f"commands.{file[:-3]}"
+            )
+
+async def main():
+
+    async with bot:
+        await load_cogs()
+        await bot.start(TOKEN)
+
+import asyncio
+asyncio.run(main()))
 async def ping(interaction: discord.Interaction):
 
     await interaction.response.send_message(
