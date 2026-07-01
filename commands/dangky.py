@@ -21,89 +21,36 @@ class DangKy(commands.Cog):
         user_id = str(interaction.user.id)
 
         # Kiểm tra đã đăng ký chưa
-        cursor.execute("""
-            SELECT account_id,
-                   account_number,
-                   cccd,
-                   balance,
-                   created_at,
-                   status
-            FROM accounts
-            WHERE user_id=?
-        """, (user_id,))
+        cursor.execute(
+            "SELECT account_id FROM accounts WHERE user_id=?",
+            (user_id,)
+        )
 
-        account = cursor.fetchone()
-
-        if account:
-
-            embed = discord.Embed(
-                title="🏦 Bạn đã có tài khoản ngân hàng",
-                color=discord.Color.orange()
-            )
-
-            embed.add_field(
-                name="🆔 Mã tài khoản",
-                value=account[0],
-                inline=False
-            )
-
-            embed.add_field(
-                name="💳 Số tài khoản",
-                value=account[1],
-                inline=False
-            )
-
-            embed.add_field(
-                name="🪪 CCCD",
-                value=account[2],
-                inline=False
-            )
-
-            embed.add_field(
-                name="💰 Số dư",
-                value=f"{account[3]:,} VNĐ",
-                inline=False
-            )
-
-            embed.add_field(
-                name="📅 Ngày tạo",
-                value=account[4],
-                inline=False
-            )
-
-            embed.add_field(
-                name="🔒 Trạng thái",
-                value=account[5],
-                inline=False
-            )
-
+        if cursor.fetchone():
             await interaction.response.send_message(
-                embed=embed,
+                "❌ Bạn đã đăng ký tài khoản rồi!",
                 ephemeral=True
             )
-
             db.close()
             return
 
-        # Tạo tài khoản mới
+        # Tạo thông tin tài khoản
         account_id = str(random.randint(100000, 999999))
         account_number = str(random.randint(1000000000, 9999999999))
         cccd = str(random.randint(100000000000, 999999999999))
-
         created_at = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
         cursor.execute("""
-            INSERT INTO accounts
-            (
-                user_id,
-                account_id,
-                account_number,
-                cccd,
-                balance,
-                created_at,
-                status
-            )
-            VALUES (?,?,?,?,?,?,?)
+        INSERT INTO accounts(
+            user_id,
+            account_id,
+            account_number,
+            cccd,
+            balance,
+            created_at,
+            status
+        )
+        VALUES(?,?,?,?,?,?,?)
         """, (
             user_id,
             account_id,
@@ -118,34 +65,15 @@ class DangKy(commands.Cog):
         db.close()
 
         embed = discord.Embed(
-            title="✅ Đăng ký thành công",
-            description="Tài khoản ngân hàng của bạn đã được tạo.",
+            title="🏦 Đăng ký thành công",
             color=discord.Color.green()
         )
 
-        embed.add_field(
-            name="🆔 Mã tài khoản",
-            value=account_id,
-            inline=False
-        )
-
-        embed.add_field(
-            name="💳 Số tài khoản",
-            value=account_number,
-            inline=False
-        )
-
-        embed.add_field(
-            name="🪪 CCCD",
-            value=cccd,
-            inline=False
-        )
-
-        embed.add_field(
-            name="💰 Số dư",
-            value="0 VNĐ",
-            inline=False
-        )
+        embed.add_field(name="🆔 Mã tài khoản", value=f"`{account_id}`", inline=False)
+        embed.add_field(name="💳 Số tài khoản", value=f"`{account_number}`", inline=False)
+        embed.add_field(name="🪪 CCCD", value=f"`{cccd}`", inline=False)
+        embed.add_field(name="💰 Số dư", value="`0 VNĐ`", inline=False)
+        embed.set_footer(text="AnhBiu Bank")
 
         await interaction.response.send_message(embed=embed)
 
