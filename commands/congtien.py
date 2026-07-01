@@ -11,13 +11,29 @@ class CongTien(commands.Cog):
         name="congtien",
         description="Cộng tiền cho tài khoản"
     )
-    @app_commands.checks.has_permissions(administrator=True)
     async def congtien(
         self,
         interaction: discord.Interaction,
         ma_tai_khoan: str,
-        so_tien: int
+        so_tien: app_commands.Range[int, 1, None]
     ):
+
+        allowed_roles = {
+            "Owner",
+            "Co-Owner",
+            "HeadAdmin",
+            "Admin",
+            "Developer"
+        }
+
+        user_roles = {role.name for role in interaction.user.roles}
+
+        if not user_roles.intersection(allowed_roles):
+            await interaction.response.send_message(
+                "❌ Bạn không có quyền sử dụng lệnh này.",
+                ephemeral=True
+            )
+            return
 
         db = sqlite3.connect("bank.db")
         cursor = db.cursor()
@@ -27,9 +43,9 @@ class CongTien(commands.Cog):
             (ma_tai_khoan,)
         )
 
-        data = cursor.fetchone()
+        account = cursor.fetchone()
 
-        if data is None:
+        if account is None:
             await interaction.response.send_message(
                 "❌ Không tìm thấy mã tài khoản.",
                 ephemeral=True
@@ -48,14 +64,6 @@ class CongTien(commands.Cog):
         await interaction.response.send_message(
             f"✅ Đã cộng **{so_tien:,} VNĐ** cho tài khoản **{ma_tai_khoan}**."
         )
-
-    @congtien.error
-    async def congtien_error(self, interaction, error):
-        if isinstance(error, app_commands.MissingPermissions):
-            await interaction.response.send_message(
-                "❌ Chỉ người có quyền Admin mới được sử dụng lệnh này.",
-                ephemeral=True
-            )
 
 async def setup(bot):
     await bot.add_cog(CongTien(bot))
