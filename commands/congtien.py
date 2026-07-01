@@ -9,9 +9,9 @@ class CongTien(commands.Cog):
 
     @app_commands.command(
         name="congtien",
-        description="Cộng tiền cho tài khoản (Admin)"
+        description="Cộng tiền vào tài khoản (Chỉ Admin)"
     )
-    @app_commands.default_permissions(administrator=True)
+    @app_commands.checks.has_permissions(administrator=True)
     async def congtien(
         self,
         interaction: discord.Interaction,
@@ -26,10 +26,9 @@ class CongTien(commands.Cog):
                 "SELECT balance FROM accounts WHERE account_number=?",
                 (stk,)
             )
+            account = cursor.fetchone()
 
-            data = cursor.fetchone()
-
-            if data is None:
+            if account is None:
                 await interaction.response.send_message(
                     "❌ Không tìm thấy số tài khoản.",
                     ephemeral=True
@@ -37,26 +36,63 @@ class CongTien(commands.Cog):
                 db.close()
                 return
 
+            balance = account[0] + so_tien
+
             cursor.execute(
-                "UPDATE accounts SET balance = balance + ? WHERE account_number=?",
-                (so_tien, stk)
+                "UPDATE accounts SET balance=? WHERE account_number=?",
+                (balance, stk)
             )
 
             db.commit()
             db.close()
 
-            await interaction.response.send_message(
-                f"✅ Đã cộng **{so_tien:,} VNĐ** vào STK **{stk}**."
+            embed = discord.Embed(
+                title="💰 Cộng tiền thành công",
+                color=discord.Color.green()
             )
 
+            embed.add_field(
+                name="🏦 STK",
+                value=stk,
+                inline=False
+            )
+
+            embed.add_field(
+                name="💵 Đã cộng",
+                value=f"{so_tien:,} VNĐ",
+                inline=False
+            )
+
+            embed.add_field(
+                name="💳 Số dư mới",
+                value=f"{balance:,} VNĐ",
+                inline=False
+            )
+
+            await interaction.response.send_message(embed=embed)
+
         except Exception as e:
-            print(f"[CONGTIEN] {e}")
+            print(e)
 
             if not interaction.response.is_done():
                 await interaction.response.send_message(
-                    "❌ Có lỗi xảy ra khi cộng tiền.",
+                    f"❌ Lỗi: {e}",
                     ephemeral=True
                 )
+
+    @congtien.error
+    async def congtien_error(
+        self,
+        interaction: discord.Interaction,
+        error: app_commands.AppCommandError
+    ):
+        if isinstance(error, app_commands.MissingPermissions):
+            await interaction.response.send_message(
+                "❌ Chỉ người có quyền **Administrator** mới được sử dụng lệnh này.",
+                ephemeral=True
+            )
+        else:
+            print(error)
 
 async def setup(bot):
     await bot.add_cog(CongTien(bot))
