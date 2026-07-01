@@ -53,7 +53,7 @@ class CongTien(commands.Cog):
     async def congtien_error(self, interaction, error):
         if isinstance(error, app_commands.MissingPermissions):
             await interaction.response.send_message(
-                "❌ Chỉ người có quyền Administrator mới được sử dụng lệnh này.",
+                "❌ Chỉ người có quyền Admin mới được sử dụng lệnh này.",
                 ephemeral=True
             )
 
