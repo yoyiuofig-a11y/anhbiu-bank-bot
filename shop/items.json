@@ -21,4 +21,20 @@
     {"id": 19, "name": "🚗 Ô tô", "price": 10000000, "description": "Phương tiện"},
     {"id": 20, "name": "🏠 Biệt thự", "price": 100000000, "description": "Bất động sản"}
   ]
-    }
+    },
+{"id": 25, "name": "🪣 Xô", "price": 1000, "description": "Đựng nước"},
+{"id": 26, "name": "🕯️ Đèn pin", "price": 3000, "description": "Chiếu sáng"},
+{"id": 27, "name": "🔥 Bật lửa", "price": 500, "description": "Nhóm lửa"},
+{"id": 28, "name": "🧭 La bàn", "price": 7000, "description": "Chỉ đường"},
+{"id": 29, "name": "🗺️ Bản đồ", "price": 10000, "description": "Xem khu vực"},
+{"id": 30, "name": "🎒 Ba lô", "price": 15000, "description": "Tăng sức chứa kho đồ"},
+{"id": 31, "name": "🪙 Đồng xu vàng", "price": 50000, "description": "Vật phẩm sưu tầm"},
+{"id": 32, "name": "💰 Túi tiền", "price": 75000, "description": "Đựng tiền"},
+{"id": 33, "name": "🎁 Hộp quà", "price": 25000, "description": "Mở ngẫu nhiên phần thưởng"},
+{"id": 34, "name": "🎟️ Vé may mắn", "price": 10000, "description": "Tham gia quay thưởng"},
+{"id": 35, "name": "🔑 Chìa khóa", "price": 5000, "description": "Mở rương"},
+{"id": 36, "name": "📦 Rương gỗ", "price": 20000, "description": "Có thể mở để nhận vật phẩm"},
+{"id": 37, "name": "💎 Rương kim cương", "price": 200000, "description": "Chứa vật phẩm hiếm"},
+{"id": 38, "name": "🎲 Xúc xắc", "price": 3000, "description": "Dùng để chơi mini game"},
+{"id": 39, "name": "🎈 Bóng bay", "price": 500, "description": "Đồ trang trí"},
+{"id": 40, "name": "🎂 Bánh sinh nhật", "price": 5000, "description": "Có thể tặng người khác"}
