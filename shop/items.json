@@ -1,1 +1,24 @@
-
+{
+  "items": [
+    {"id": 1, "name": "🍎 Táo", "price": 100, "description": "Hồi phục nhẹ"},
+    {"id": 2, "name": "🍌 Chuối", "price": 120, "description": "Hoa quả"},
+    {"id": 3, "name": "🍞 Bánh mì", "price": 250, "description": "Đồ ăn"},
+    {"id": 4, "name": "🥛 Sữa", "price": 350, "description": "Đồ uống"},
+    {"id": 5, "name": "🍕 Pizza", "price": 900, "description": "Đồ ăn nhanh"},
+    {"id": 6, "name": "🍔 Hamburger", "price": 850, "description": "Burger ngon"},
+    {"id": 7, "name": "🥤 Nước ngọt", "price": 200, "description": "Giải khát"},
+    {"id": 8, "name": "☕ Cà phê", "price": 300, "description": "Tăng tỉnh táo"},
+    {"id": 9, "name": "🧸 Gấu bông", "price": 1500, "description": "Quà tặng"},
+    {"id": 10, "name": "📱 Điện thoại", "price": 25000, "description": "Thiết bị"},
+    {"id": 11, "name": "💻 Laptop", "price": 80000, "description": "Máy tính"},
+    {"id": 12, "name": "⌚ Đồng hồ", "price": 12000, "description": "Phụ kiện"},
+    {"id": 13, "name": "🎧 Tai nghe", "price": 5000, "description": "Âm nhạc"},
+    {"id": 14, "name": "🖱 Chuột", "price": 2500, "description": "Gaming"},
+    {"id": 15, "name": "⌨️ Bàn phím", "price": 4500, "description": "Cơ học"},
+    {"id": 16, "name": "💎 Kim cương", "price": 500000, "description": "Cực hiếm"},
+    {"id": 17, "name": "🥇 Huy chương vàng", "price": 1000000, "description": "Sưu tầm"},
+    {"id": 18, "name": "👑 Vương miện", "price": 2500000, "description": "Vật phẩm VIP"},
+    {"id": 19, "name": "🚗 Ô tô", "price": 10000000, "description": "Phương tiện"},
+    {"id": 20, "name": "🏠 Biệt thự", "price": 100000000, "description": "Bất động sản"}
+  ]
+    }
