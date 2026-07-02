@@ -8,24 +8,21 @@ class AnhBiuShop(commands.Cog):
 
     @app_commands.command(
         name="shop",
-        description="Mở AnhBiu Shop"
+        description="Mở cửa hàng AnhBiu Shop"
     )
     async def shop(self, interaction: discord.Interaction):
 
         embed = discord.Embed(
             title="🛒 AnhBiu Shop",
             description=(
-                "Chào mừng đến với AnhBiu Shop!\n\n"
-                "Sắp có các danh mục:\n"
-                "🍜 Mì ăn liền\n"
-                "🥤 Đồ uống\n"
-                "🍪 Bánh kẹo\n"
-                "🧴 Gia dụng\n"
-                "🎁 Quà tặng\n"
-                "🎮 Thẻ game\n"
-                "💎 Discord Nitro"
+                "**Chọn một chức năng:**\n\n"
+                "🛍️ Cửa hàng\n"
+                "📦 Kho đồ\n"
+                "📜 Lịch sử mua\n"
+                "🎁 Khuyến mãi\n"
+                "⭐ Sản phẩm nổi bật"
             ),
-            color=discord.Color.green()
+            color=0x2ECC71
         )
 
         embed.set_footer(text="AnhBiu Shop")
