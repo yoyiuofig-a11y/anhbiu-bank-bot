@@ -6,26 +6,30 @@ from flask import Flask
 import discord
 from discord.ext import commands
 
-# ================= WEB SERVER =================
+# ==========================
+# WEB SERVER
+# ==========================
 
 app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "AnhBiu Bank Bot đang chạy!"
+    return "🤖 AnhBiu Bot đang hoạt động!"
 
 def run_web():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
 
-Thread(target=run_web).start()
+Thread(target=run_web, daemon=True).start()
 
-# ================= DISCORD =================
+# ==========================
+# DISCORD BOT
+# ==========================
 
 TOKEN = os.getenv("TOKEN")
 
-if not TOKEN:
-    raise Exception("Thiếu biến môi trường TOKEN")
+if TOKEN is None:
+    raise Exception("❌ Không tìm thấy TOKEN!")
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -33,12 +37,19 @@ intents.members = True
 
 bot = commands.Bot(
     command_prefix="!",
-    intents=intents
+    intents=intents,
+    help_command=None
 )
 
-# ================= DATABASE =================
+# ==========================
+# DATABASE
+# ==========================
 
-db = sqlite3.connect("bank.db")
+db = sqlite3.connect(
+    "bank.db",
+    check_same_thread=False
+)
+
 cursor = db.cursor()
 
 cursor.execute("""
@@ -65,34 +76,58 @@ CREATE TABLE IF NOT EXISTS logs(
 
 db.commit()
 
-# ================= LOAD COMMANDS =================
+# ==========================
+# LOAD COMMANDS
+# ==========================
 
 @bot.event
 async def setup_hook():
-    print("📦 Đang tải commands...")
 
-    if os.path.exists("commands"):
-        for file in os.listdir("commands"):
-            if file.endswith(".py") and file != "__init__.py":
-                try:
-                    await bot.load_extension(f"commands.{file[:-3]}")
-                    print(f"✅ {file}")
-                except Exception as e:
-                    print(f"❌ {file}: {e}")
+    print("=" * 40)
+    print("📦 Đang tải Commands...")
+    print("=" * 40)
 
-# ================= READY =================
+    if not os.path.exists("commands"):
+        os.mkdir("commands")
+
+    for file in os.listdir("commands"):
+
+        if file.endswith(".py") and file != "__init__.py":
+
+            try:
+                await bot.load_extension(
+                    f"commands.{file[:-3]}"
+                )
+
+                print(f"✅ Đã tải {file}")
+
+            except Exception as e:
+
+                print(f"❌ Lỗi {file}")
+                print(e)
+
+    try:
+        synced = await bot.tree.sync()
+        print(f"\n✅ Đồng bộ {len(synced)} Slash Commands")
+
+    except Exception as e:
+        print(f"❌ Sync lỗi: {e}")
+
+# ==========================
+# EVENTS
+# ==========================
 
 @bot.event
 async def on_ready():
-    try:
-        synced = await bot.tree.sync()
-        print(f"✅ Đồng bộ {len(synced)} slash commands")
-    except Exception as e:
-        print(e)
 
     print("=" * 40)
-    print(f"🤖 {bot.user}")
-    print(f"🌍 {len(bot.guilds)} server")
+    print(f"🤖 Bot: {bot.user}")
+    print(f"🆔 ID: {bot.user.id}")
+    print(f"🌍 Servers: {len(bot.guilds)}")
     print("=" * 40)
+
+# ==========================
+# START BOT
+# ==========================
 
 bot.run(TOKEN)
